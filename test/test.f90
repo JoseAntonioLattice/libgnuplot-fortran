@@ -1,17 +1,29 @@
 program test
 
-  use iso_fortran_env, only : dp => real64, i4 => int32
-  use gnuplot
+  use matlib
+  use gnuplotlib
+  
+  use iso_fortran_env, only : dp => real64
   implicit none
 
-  type(gpplot) :: plot1
-  integer(i4), parameter :: n = 100
-  real(dp), dimension(n) :: x, y
-  integer(i4) :: i
+  
+  integer, parameter :: n = 101
+  real(dp), dimension(n) :: x, y1, y2,y3
 
-  x = [((i-1)*0.1_dp, i =1, n)] 
-  y = sin(x)
-  plot1 = gpplot(y_label = "perro", title = "hola")
-  !call plot(x,y,x_label = 'perro', y_label = 'puto', key ="berga", title = 'beibi')
-  call plot1%plot(x,y)
+  type(gnuplot) :: plot1
+  
+  x = linspace(0.0_dp,10.0_dp,n)
+  y1 = sin(x)
+  y2 = cos(x)
+  y3 = sin(x)**2
+
+
+  plot1%title = [character(20) :: ]
+  call plot1%set_options('set key right bottom;')
+  call plot1%set_options('set title "Trigonometric functions";')
+  call plot1%plot(x,y1,"sin(x)")
+  call plot1%plot(x,y2)
+  call plot1%plot(x,y3,"sin^2(x)")
+  call plot1%show()
+
 end program test

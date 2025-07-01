@@ -1,56 +1,66 @@
-module gnuplot
+module gnuplotlib
 
-  use iso_fortran_env, only : dp => real64, i4 => int32
+  use number2string
+  use iso_fortran_env, only : dp => real64
   implicit none
-
-  type gpplot
-     character(:), allocatable :: x_label 
-     character(:), allocatable :: y_label != ' '
-     character(:), allocatable :: key     != ' '
-     character(:), allocatable :: title   != ' '
+  
+  type gnuplot
+     character(:), allocatable :: options
+     integer :: unit
+     integer :: nplots = 0
+     character(20), allocatable :: title(:)
    contains
-     procedure :: plot 
-  end type gpplot 
+     procedure :: set_options
+     procedure :: plot
+     procedure :: show
+  end type gnuplot
+
 contains
-
-  subroutine plot(self,x,y)
-    class(gpplot) :: self
-    real(dp), dimension(:), intent(in) :: x, y
-    integer(i4) :: outunit, i
-    character(256) :: arguments
-
-    if (.not. allocated(self%x_label)) self%x_label = ''
-    if (.not. allocated(self%y_label)) self%y_label = ''
-    if (.not. allocated(self%key))     self%key = ''
-    if (.not. allocated(self%title))   self%title = ''
-
-    self%x_label = "'"//self%x_label//"'"
-    self%y_label = "'"//self%y_label//"'"
-    self%key     = "'"//self%key//"'"
-    self%title   = "'"//self%title//"'"
+  
+  subroutine set_options(this,string)
+    class(gnuplot) :: this
+    character(*), intent(in) :: string
+    integer :: options_unit
     
-    arguments = self%x_label//" "//self%y_label//" "//self%key//" "//self%title
-    print*, trim(arguments)
+    this%options = trim(this%options)//trim(string)
     
-    open(newunit = outunit, file = '/tmp/temp.dat')
-    do i = 1, size(x)
-       write(outunit,*) x(i), y(i)
+  end subroutine set_options
+
+  subroutine plot(this,x,y,title)
+    class(gnuplot) :: this
+    real(dp), intent(in), dimension(:) :: x, y
+    character(:),allocatable :: filename
+    character(*), intent(in), optional :: title
+    integer :: i, ou
+    
+    this%nplots = this%nplots + 1
+    filename = "tmp"//int2str(this%nplots)//".dat"
+    if(present(title))then
+       this%title = [this%title, title]
+    else
+       this%title = [this%title, "plot "//int2str(this%nplots)]
+    end if
+    open(newunit=ou,file=filename)
+    do i = 1, size(y)
+       write(ou,*) x(i), y(i)
     end do
-    call execute_command_line("gnuplot -p -c "//"'plot1.plt' "//trim(arguments))
-    close(outunit)
-    call execute_command_line("rm /tmp/temp.dat")
+    close(ou)
   end subroutine plot
 
-  subroutine check_prescence(arg,str)
-    character(*), intent(in), optional :: arg
-    character(:), allocatable :: str
+  subroutine show(this)
+    class(gnuplot) :: this
+    integer :: i
+    character(:),allocatable :: command
 
-    if(present(arg))then
-       str = trim(arg)
-    else
-       str = ''
-    end if
-  end subroutine check_prescence
- 
+
+    command = ''
+    do i = 1, this%nplots
+       command = command//"'"//trim(this%title(i))//"'"
+    end do
+        
+    call execute_command_line("gnuplot -c plot.plt "//&
+         int2str(this%nplots)//' "'//command//'"' )
+    
+  end subroutine show
   
-end module gnuplot
+end module gnuplotlib

@@ -37,7 +37,7 @@ install:
 	./install.sh
 
 test: $(BUILD) 
-	@$(FC) -I$(INC) test.f90 -o $(BUILD)/$@ -L$(LIB) -l$(libname)
+	@$(FC) -I$(INC) test/test.f90 -o $(BUILD)/$@ -L$(LIB) -l$(libname) -lmat -lnum2str
 	@LD_LIBRARY_PATH=$(LIB) $(BUILD)/$@
 
 $(BUILD):
